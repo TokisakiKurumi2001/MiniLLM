@@ -61,7 +61,7 @@ def get_teacher_model(args, device):
             args.teacher_model_path, 
             config=config, 
             device_map={"": device}, 
-            torch_dtype=torch.float16 if args.model_type!="qwen" else torch.bfloat16
+            torch_dtype=torch.float16 if (args.model_type!="qwen" or not args.use_bf16) else torch.bfloat16
         )
 
         if args.peft is not None and args.teacher_peft_path is not None:
@@ -131,10 +131,11 @@ def setup_model_and_optimizer(args, ds_config, device, set_optim=True):
     else:
         optimizer, lr_scheduler = None, None
         
-    if args.model_type=="qwen" and ds_config['fp16']['enabled']==True:
+    if (args.model_type=="qwen" and ds_config['fp16']['enabled']==True) or (args.use_bf16):
         import copy
         ds_config['bf16']=copy.deepcopy(ds_config['fp16'])
         ds_config['fp16']['enabled']=False
+
     model, optimizer, _, lr_scheduler = deepspeed.initialize(
         model=model,
         optimizer=optimizer,
@@ -504,7 +505,7 @@ def main():
     if not args.do_train:
         ds_config["zero_optimization"]["stage"] = 0
     
-    args.fp32 = not ds_config["fp16"]["enabled"]    
+    args.fp32 = not ds_config["fp16"]["enabled"]
     args.deepspeed_config = None
     
     # get the tokenizer

@@ -37,6 +37,7 @@ def add_model_args(parser: argparse.ArgumentParser):
     group.add_argument("--no-value", action="store_true")
     group.add_argument("--dropout-path-rate", type=float, default=None)
     group.add_argument("--fp32", action="store_true")
+    group.add_argument("--use_bf16", action="store_true")
     return parser
 
 
